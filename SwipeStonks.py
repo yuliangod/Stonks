@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 fcff_df = pd.read_excel('Dividend_analysis/sgx_FCFF_analysis.xlsx', index_col=[0,2])
+sgx_df = pd.read_csv('myData.csv', index_col=[1])
 
 class swipestonks:
     def __init__(self, master):
@@ -62,18 +63,7 @@ class swipestonks:
         
         self.ax2.set_title(self.stock)
 
-        #display stats associated with stock
-        self.wacc = fcff_df.loc[(self.stock, 2020), "WACC"]      #extract wacc of stock
-        self.wacc_label = Label(self.master, text= f"WACC: \n{self.wacc}", font='Helvetica 10')
-        self.wacc_label.grid(row=1, column=0, sticky="E")
-
-        self.fair_value = fcff_df.loc[(self.stock, 2020), "Fair value"]      #extract fair value of stock
-        self.fair_value_label = Label(self.master, text= f"Fair value: \n{self.fair_value}", font='Helvetica 10')
-        self.fair_value_label.grid(row=1, column=1, sticky="W")
-
-        self.percentage_undervalued = round(fcff_df.loc[(self.stock, 2020), "Percentage undervalued"],2)      #extract fair value of stock
-        self.percentage_undervalued_label = Label(self.master, text= f"Percentage undervalued: \n{self.percentage_undervalued}%", font='Helvetica 10')
-        self.percentage_undervalued_label.grid(row=2, column=1, sticky="W")
+        self.stats_frame(self.stock, self.master)
 
         #self.dividend_button = Button(master, text="Show dividend trend", command=self.div_graph)   #plot graph of historical dividend growth
         #self.dividend_button.grid(row=3, column=0, sticky="E")
@@ -124,7 +114,34 @@ class swipestonks:
         self.close_button = Button(master, text="Close", command=master.quit)      
         self.close_button.grid(row=6, column=0, columnspan=2)
 
+    #function to set up frame that displays relevant stats relating to stock
+    def stats_frame(self,stock,frame):
+        self.statsframe = Frame(frame)
+        self.statsframe.grid_forget()
+        self.statsframe.grid(row=1, column=0, columnspan=2)
 
+        trading_code = stock.replace(".SI", "")
+        self.trading_name = sgx_df.loc[trading_code, "Trading Name"]    #display name of stock
+        self.trading_name_label = Label(self.statsframe, text= f"Name: \n{self.trading_name}", font='Helvetica 10')
+        self.trading_name_label.grid(row=0, column=0)
+
+        self.sector = sgx_df.loc[trading_code, "Sector"]    #display sector of stock
+        self.sector_label = Label(self.statsframe, text= f"Sector: \n{self.sector}", font='Helvetica 10')
+        self.sector_label.grid(row=0, column=1)
+
+        self.wacc = fcff_df.loc[(stock, 2020), "WACC"]      #extract wacc of stock
+        self.wacc_label = Label(self.statsframe, text= f"WACC: \n{self.wacc}", font='Helvetica 10')
+        self.wacc_label.grid(row=1, column=0)
+
+        self.fair_value = fcff_df.loc[(stock, 2020), "Fair value"]      #extract fair value of stock
+        self.fair_value_label = Label(self.statsframe, text= f"Fair value: \n{self.fair_value}", font='Helvetica 10')
+        self.fair_value_label.grid(row=1, column=1)
+
+        self.percentage_undervalued = round(fcff_df.loc[(stock, 2020), "Percentage undervalued"],2)      #extract fair value of stock
+        self.percentage_undervalued_label = Label(self.statsframe, text= f"Percentage undervalued: \n{self.percentage_undervalued}%", font='Helvetica 10')
+        self.percentage_undervalued_label.grid(row=2, column=0)
+
+    #function that refreshes app when next or back button is pressed
     def greet(self, idx):
         #get ticker of next stock in the list
         self.stock = fcff_df.index.get_level_values("Ticker").drop_duplicates()[idx]
@@ -196,20 +213,7 @@ class swipestonks:
         self.ax2.set_title(self.stock)
 
         #display next stats
-        self.wacc_label.grid_forget()
-        self.wacc = fcff_df.loc[(self.stock, 2020), "WACC"]      #extract wacc of stock
-        self.wacc_label = Label(self.master, text= f"WACC: \n{self.wacc}", font='Helvetica 10')
-        self.wacc_label.grid(row=1, column=0, sticky="E")
-
-        self.fair_value_label.grid_forget()
-        self.fair_value = fcff_df.loc[(self.stock, 2020), "Fair value"]      #extract fair value of stock
-        self.fair_value_label = Label(self.master, text= f"Fair value: \n{self.fair_value}", font='Helvetica 10')
-        self.fair_value_label.grid(row=1, column=1, sticky="W")
-
-        self.percentage_undervalued_label.grid_forget()
-        self.percentage_undervalued = round(fcff_df.loc[(self.stock, 2020), "Percentage undervalued"],2)      #extract fair value of stock
-        self.percentage_undervalued_label = Label(self.master, text= f"Percentage undervalued: \n{self.percentage_undervalued}%", font='Helvetica 10')
-        self.percentage_undervalued_label.grid(row=2, column=1, sticky="W")
+        self.stats_frame(self.stock, self.master)
 
         #self.dividend_label.grid_forget()
         #self.dividend = fcff_df.loc[self.stock, "Dividend"].to_string()     #extract historical dividends of stock
@@ -225,7 +229,8 @@ class swipestonks:
         with open("swipestonkscache.txt", "w") as myfile:
             myfile.write(str(idx))
 
-    def like(self):     #toggle button to like stock
+    #function for like button
+    def like(self):     
         if self.like_button.config('relief')[-1] == 'sunken':
             self.like_button.config(relief="raised")
             print('Unlike')
@@ -314,6 +319,7 @@ class swipestonks:
         wacc_display.delete(0, END)
         wacc_display.insert(0, wacc)
 
+    # functions for edit fair value window
     def editFairValue(self, stock):
         def calculate_fairValue():
 
@@ -432,13 +438,7 @@ class swipestonks:
             self.ax2.set_title(stock)
 
             #display next stats
-            wacc = fcff_df.loc[(stock, 2020), "WACC"]      #extract wacc of stock
-            wacc_label = Label(watchlist_stock_window, text= f"WACC: \n{wacc}", font='Helvetica 10')
-            wacc_label.grid(row=1, column=0, sticky="E")
-
-            fair_value = fcff_df.loc[(stock, 2020), "Fair value"]      #extract fair value of stock
-            fair_value_label = Label(watchlist_stock_window, text= f"Fair value: \n{fair_value}", font='Helvetica 10')
-            fair_value_label.grid(row=1, column=1, sticky="W")
+            self.stats_frame(stock, watchlist_stock_window)
 
             #button to edit WACC
             edit_wacc_button = Button(watchlist_stock_window, text="Edit WACC", command=lambda: self.editWACC(stock))
