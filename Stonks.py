@@ -13,6 +13,7 @@ import traceback
 from sgxscraper import sgx_scraper
 from SGXtickers_list import sgx_market_cap
 
+# function to extract price history of list of tickers to a csv
 def tickers_to_csv(list_of_tickers, csv_name):
   ' '.join(list_of_tickers)
   data = yf.download(list_of_tickers, period = '2y')
