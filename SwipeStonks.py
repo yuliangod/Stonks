@@ -14,6 +14,8 @@ class swipestonks:
     def __init__(self, master):
         self.master = master
         master.title("SwipeStonks")
+        self.window_frame = Frame(master)
+        self.window_frame.pack()
         
         #get last stock before app was closed
         with open('swipestonkscache.txt', 'r') as f1:
@@ -26,13 +28,13 @@ class swipestonks:
         #mo = img_regex.search(self.stock)
         #self.img_name = mo.group(1) + "_SI"
         #self.img = ImageTk.PhotoImage(Image.open(f'Dividend_analysis/{self.img_name}.png'))
-        #self.stock_img = Label(master, image = self.img)
+        #self.stock_img = Label(window_frame, image = self.img)
         #self.stock_img.grid(row=0, column=0, columnspan=2)
 
         #embed 1st matplotlib graph into tkinter
         self.figure = plt.Figure(figsize=(6,5), dpi=70)
         self.ax = self.figure.add_subplot(111)
-        self.line_graph = FigureCanvasTkAgg(self.figure, master)
+        self.line_graph = FigureCanvasTkAgg(self.figure, self.window_frame)
         self.line_graph.get_tk_widget().grid(row=0, column=0)
 
         self.fcff_df = fcff_df.loc[self.stock,'Revenue']     #plot graph for Revenue
@@ -49,7 +51,7 @@ class swipestonks:
         #embed 2nd matplotlib graph into tkinter
         self.figure2 = plt.Figure(figsize=(6,5), dpi=70)
         self.ax2 = self.figure2.add_subplot(111)
-        self.line_graph2 = FigureCanvasTkAgg(self.figure2, master)
+        self.line_graph2 = FigureCanvasTkAgg(self.figure2, self.window_frame)
         self.line_graph2.get_tk_widget().grid(row=0, column=1)
 
         self.fcff_df = fcff_df.loc[self.stock,'Expected Growth Rate']     #plot graph for expected growth rate
@@ -63,9 +65,9 @@ class swipestonks:
         
         self.ax2.set_title(self.stock)
 
-        self.stats_frame(self.stock, self.master)
+        self.stats_frame(self.stock, self.window_frame)
 
-        #self.dividend_button = Button(master, text="Show dividend trend", command=self.div_graph)   #plot graph of historical dividend growth
+        #self.dividend_button = Button(window_frame, text="Show dividend trend", command=self.div_graph)   #plot graph of historical dividend growth
         #self.dividend_button.grid(row=3, column=0, sticky="E")
 
         #self.dividend = fcff_df.loc[self.stock, "Dividend"].to_string()     #extract historical dividends of stock
@@ -77,28 +79,28 @@ class swipestonks:
         #self.dividend_growth_rate_label.grid(row=2, column=1, sticky="W")
 
         #button to edit WACC
-        self.edit_wacc_button = Button(master, text="Edit WACC", command= lambda: self.editWACC(self.stock))
+        self.edit_wacc_button = Button(self.window_frame, text="Edit WACC", command= lambda: self.editWACC(self.stock))
         self.edit_wacc_button.grid(row=2, column=0)
 
         #button to edit fair value
-        self.edit_wacc_button = Button(master, text="Edit fair value", command=lambda: self.editFairValue(self.stock))
+        self.edit_wacc_button = Button(self.window_frame, text="Edit fair value", command=lambda: self.editFairValue(self.stock))
         self.edit_wacc_button.grid(row=2, column=1)
 
         #button to get to next page
-        self.next_button = Button(master, text="Next", command=lambda: self.greet(self.idx + 1))    
+        self.next_button = Button(self.window_frame, text="Next", command=lambda: self.greet(self.idx + 1))    
         self.next_button.grid(row=4, column=1, pady=10, sticky="W")
         if (self.idx + 1) == len(fcff_df.index.get_level_values("Ticker").drop_duplicates()):
             self.next_button["state"] = DISABLED
             
 
         #button to get back to previous page
-        self.back_button = Button(master, text="Back", command=lambda: self.greet(self.idx - 1))    
+        self.back_button = Button(self.window_frame, text="Back", command=lambda: self.greet(self.idx - 1))    
         self.back_button.grid(row=4, column=0, pady=10, sticky="E")
         if (self.idx) == 0:
             self.back_button["state"] = DISABLED
 
         #button to like stock
-        self.like_button = Button(master, text="Like", command= self.like, relief="raised")
+        self.like_button = Button(self.window_frame, text="Like", command= self.like, relief="raised")
         self.like_button.grid(row=5, column=0, sticky="E")
         with open("watchlistcache.txt", "r") as f:
             lines = f.readlines()
@@ -107,17 +109,16 @@ class swipestonks:
                 self.like_button.config(relief="sunken")
 
         #button to view watchlist
-        self.watchlist_button = Button(master, text="Watchlist", command=self.see_watchlist)
+        self.watchlist_button = Button(self.window_frame, text="Watchlist", command=self.see_watchlist)
         self.watchlist_button.grid(row=5, column=1, sticky="W")  
 
         #button to close program
-        self.close_button = Button(master, text="Close", command=master.quit)      
+        self.close_button = Button(self.window_frame, text="Close", command=master.quit)      
         self.close_button.grid(row=6, column=0, columnspan=2)
 
     #function to set up frame that displays relevant stats relating to stock
-    def stats_frame(self,stock,frame):
+    def stats_frame(self,stock,frame,forget=False):
         self.statsframe = Frame(frame)
-        self.statsframe.grid_forget()
         self.statsframe.grid(row=1, column=0, columnspan=2)
 
         trading_code = stock.replace(".SI", "")
@@ -143,10 +144,17 @@ class swipestonks:
 
     #function that refreshes app when next or back button is pressed
     def greet(self, idx):
+        #reset window_frame frame
+        self.window_frame.forget()
+        self.window_frame = Frame(self.master)
+        self.window_frame.pack()
+
         #get ticker of next stock in the list
         self.stock = fcff_df.index.get_level_values("Ticker").drop_duplicates()[idx]
 
         #toggle like button depending on whether current stock is in watchlist
+        self.like_button = Button(self.window_frame, text="Like", command= self.like, relief="raised")
+        self.like_button.grid(row=5, column=0, sticky="E")
         with open("watchlistcache.txt", "r") as watchlist:
             lines = watchlist.readlines()
         if str(self.stock + '\n') in lines:
@@ -154,8 +162,16 @@ class swipestonks:
         else:
             self.like_button.config(relief="raised")
 
+        #button to view watchlist
+        self.watchlist_button = Button(self.window_frame, text="Watchlist", command=self.see_watchlist)
+        self.watchlist_button.grid(row=5, column=1, sticky="W")  
+
+        #button to close program
+        self.close_button = Button(self.window_frame, text="Close", command=self.master.quit)      
+        self.close_button.grid(row=6, column=0, columnspan=2)
+
         #update next button
-        self.next_button = Button(self.master, text="Next", command=lambda: self.greet(idx + 1))
+        self.next_button = Button(self.window_frame, text="Next", command=lambda: self.greet(idx + 1))
         self.next_button.grid(row=4, column=1, sticky="W")
 
         #disable next stock button at the last stock 
@@ -163,7 +179,7 @@ class swipestonks:
             self.next_button["state"] = DISABLED
 
         #update back button
-        self.back_button = Button(self.master, text="Back", command=lambda: self.greet(idx - 1), state=NORMAL)    
+        self.back_button = Button(self.window_frame, text="Back", command=lambda: self.greet(idx - 1), state=NORMAL)    
         self.back_button.grid(row=4, column=0, sticky="E")
         if (idx) == 0:
             self.back_button["state"] = DISABLED
@@ -174,13 +190,13 @@ class swipestonks:
         #mo = img_regex.search(self.stock)
         #self.img_name = mo.group(1) + "_SI"
         #self.img = ImageTk.PhotoImage(Image.open(f'Dividend_analysis/{self.img_name}.png'))
-        #self.stock_img = Label(self.master, image = self.img)
+        #self.stock_img = Label(self.window_frame, image = self.img)
         #self.stock_img.grid(row=0, column=0, columnspan=2)
 
         #plot next 1st graph
         self.figure = plt.Figure(figsize=(6,5), dpi=70)
         self.ax = self.figure.add_subplot(111)
-        self.line_graph = FigureCanvasTkAgg(self.figure, self.master)
+        self.line_graph = FigureCanvasTkAgg(self.figure, self.window_frame)
         self.line_graph.get_tk_widget().grid(row=0, column=0)
 
         self.fcff_df = fcff_df.loc[self.stock,'Revenue']     #plot graph for Revenue
@@ -197,7 +213,7 @@ class swipestonks:
         #embed 2nd matplotlib graph into tkinter
         self.figure2 = plt.Figure(figsize=(6,5), dpi=70)
         self.ax2 = self.figure2.add_subplot(111)
-        self.line_graph2 = FigureCanvasTkAgg(self.figure2, self.master)
+        self.line_graph2 = FigureCanvasTkAgg(self.figure2, self.window_frame)
         self.line_graph2.get_tk_widget().grid(row=0, column=1)
 
         self.fcff_df = fcff_df.loc[self.stock,'Expected Growth Rate']     #plot graph for expected growth rate
@@ -213,7 +229,7 @@ class swipestonks:
         self.ax2.set_title(self.stock)
 
         #display next stats
-        self.stats_frame(self.stock, self.master)
+        self.stats_frame(self.stock, self.window_frame, forget=True)
 
         #self.dividend_label.grid_forget()
         #self.dividend = fcff_df.loc[self.stock, "Dividend"].to_string()     #extract historical dividends of stock
@@ -258,7 +274,7 @@ class swipestonks:
             wacc_display.delete(0, END)
             wacc_display.insert(0, wacc)
 
-        editWACC_window = Toplevel(self.master)
+        editWACC_window = Toplevel(self.window_frame)
         editWACC_window.title("Edit WACC")
         editWACC_window.geometry("200x300")
 
@@ -333,7 +349,7 @@ class swipestonks:
             fairValue_display.delete(0, END)
             fairValue_display.insert(0, fair_value)
 
-        editFairValue_window = Toplevel(self.master)
+        editFairValue_window = Toplevel(self.window_frame)
         editFairValue_window.title("Edit fair value")
         editFairValue_window.geometry("200x300")
 
@@ -508,7 +524,7 @@ class swipestonks:
                 see_watchlist_window.destroy()
                 self.see_watchlist()
 
-        see_watchlist_window = Toplevel(self.master)
+        see_watchlist_window = Toplevel(self.window_frame)
         see_watchlist_window.title("Watchlist")
         see_watchlist_window.geometry("400x500")
 

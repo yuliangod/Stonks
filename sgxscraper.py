@@ -42,6 +42,12 @@ def sgx_scraper(stock):
         driver.quit()
     expand_all.click()
 
+    #figure out currency financials are reported in
+    currency = driver.find_element_by_class_name("widget-stocks-header-currency").text
+    currency_re = re.compile(r'This company reports in this currency: (\w\w\w)')
+    mo = currency_re.search(currency)
+    currency = mo.group(1)
+
     #convert tables to dataframe
     html = driver.page_source
     soup= bs(html,'html.parser')
@@ -56,11 +62,27 @@ def sgx_scraper(stock):
     
     CF = tables[7].set_index('Fiscal Year')
     CF = CF.replace("-", 0)
+
+    #convert tables to correct currency
+    #CC = CurrencyConverter()
+    #conversion_rate = CC.convert(1, currency, 'SGD')
+
+    #IS = IS.drop(["Period Ended", "Period Length", "Source"])
+    #IS = IS.astype(float)
+    #IS = IS * conversion_rate
+
+    #BS = BS.drop(["Period Ended", "Source"])
+    #BS = BS.astype(float)
+    #BS = BS * conversion_rate
+
+    #CF = CF.drop(["Period Ended", "Source"])
+    #CF = CF.astype(float)
+    #CF = CF * conversion_rate
+
+
     driver.quit()
-    print(tables[0])
-    return IS, BS, CF
+    return IS, BS, CF, currency
 
 if __name__ == '__main__':
-    IS, BS, CF = sgx_scraper('TS0U.SI')
-    #print(IS)
-    
+    IS, BS, CF = sgx_scraper('AP4.SI')
+    print(IS)

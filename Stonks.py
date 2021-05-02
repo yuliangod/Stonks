@@ -12,6 +12,7 @@ import openpyxl
 import traceback
 from sgxscraper import sgx_scraper
 from SGXtickers_list import sgx_market_cap
+from currency_converter import CurrencyConverter
 
 # function to extract price history of list of tickers to a csv
 def tickers_to_csv(list_of_tickers, csv_name):
@@ -567,6 +568,7 @@ class SGXstocks(Stocks):
           BS = tables[1]
           E = BS.loc['Total Equity']   #try to find total equity in balance sheet to ensure tables were scraped properly
           CF = tables[2]
+          currency = tables[3]
           break
         except:
           continue
@@ -633,6 +635,8 @@ class SGXstocks(Stocks):
         fcff_df.loc[(stock,year),'Cost of debt'] = cost_of_debt 
 
         #market value of equity
+        CC = CurrencyConverter()
+        cap = CC.convert(cap, currency, 'SGD')  #convert market cap to currency financials are reported in
         fcff_df.loc[(stock,year),'Market cap'] = cap
 
         #market value of debt
@@ -706,6 +710,7 @@ class SGXstocks(Stocks):
         shares_outstanding = float(BS.loc['Total Common Shares Outstanding', year])
         fcff_df.loc[(stock,year),'Shares outstanding'] = shares_outstanding
         fair_value = projected_FCFF/shares_outstanding
+        fair_value = CC.convert(fair_value, currency, 'SGD')  #convert fair value to currency financials are reported in
         fcff_df.loc[(stock,year),'Fair value'] = fair_value
 
       #calculate percentage undervalued
