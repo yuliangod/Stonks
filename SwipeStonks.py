@@ -162,6 +162,14 @@ class swipestonks:
         else:
             self.like_button.config(relief="raised")
 
+        #button to edit WACC
+        self.edit_wacc_button = Button(self.window_frame, text="Edit WACC", command= lambda: self.editWACC(self.stock))
+        self.edit_wacc_button.grid(row=2, column=0)
+
+        #button to edit fair value
+        self.edit_wacc_button = Button(self.window_frame, text="Edit fair value", command=lambda: self.editFairValue(self.stock))
+        self.edit_wacc_button.grid(row=2, column=1)
+
         #button to view watchlist
         self.watchlist_button = Button(self.window_frame, text="Watchlist", command=self.see_watchlist)
         self.watchlist_button.grid(row=5, column=1, sticky="W")  
