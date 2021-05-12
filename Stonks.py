@@ -233,7 +233,6 @@ class Stocks(Stonks):
     volatility = (self.riskreturn(stock))[-1]
     index_volatility = (self.riskreturn(index))[-1]
     beta = correlation * (volatility/index_volatility)
-    print(beta)
     return beta
 
   def expected_return(self, stock, Rf = 0.017, Rm = 0.025):
@@ -365,6 +364,24 @@ class Stocks(Stonks):
     writer.close()  
 
     self.plot_price_graph(stock)
+
+  def CDS(self, cap, stock_ICR):
+    LargeCapCDS_df = pd.read_csv('LargeCapCDS.csv')
+    SmallCapCDS_df = pd.read_csv('SmallCapCDS.csv')
+
+    if cap <= 5000:
+      ICR_list = list(SmallCapCDS_df[">"])
+      ICR_list.append(stock_ICR)
+      ICR_list.sort(reverse=True)
+      spread_idx = ICR_list.index(stock_ICR)
+      CDS = float(SmallCapCDS_df['Spread is'][spread_idx].replace("%",""))/100
+    else:
+      ICR_list = list(LargeCapCDS_df[">"])
+      ICR_list.append(stock_ICR)
+      ICR_list.sort(reverse=True)
+      spread_idx = ICR_list.index(stock_ICR)
+      CDS = float(LargeCapCDS_df['Spread is'][spread_idx].replace("%",""))/100
+    return CDS     
 
 class SGXstocks(Stocks):
     def __init__(self,csv,timeframe=250):
@@ -610,24 +627,20 @@ class SGXstocks(Stocks):
           IE = 0.000000000000000001
         EBIT = float(IS.loc['Operating Income', year])
         stock_ICR = EBIT/IE     #interest coverage ratio
-        cap = sgx_market_cap(stock)    #get market cap
+        shares_outstanding = float(BS.loc['Total Common Shares Outstanding', year])
 
-        LargeCapCDS_df = pd.read_csv('LargeCapCDS.csv')
-        SmallCapCDS_df = pd.read_csv('SmallCapCDS.csv')
+        # get price of stock at year end
+        todays_date = date.today() 
+        current_year = float(f'{todays_date.year}.0')     #get current year to avoid error in loop
+        latest_price = list(self.pricehistory(stock))[-1]
+        if year == current_year:        #as this is the current year, eoy price is not released yet so get current price to calculate yield instead
+          eoy_price = latest_price
+        else:
+          eoy_price = self.year_end_price(stock, round(float(year)))
+        cap = shares_outstanding * eoy_price   #get market cap
 
         #get CDS based on market cap
-        if cap <= 5000:
-          ICR_list = list(SmallCapCDS_df[">"])
-          ICR_list.append(stock_ICR)
-          ICR_list.sort(reverse=True)
-          spread_idx = ICR_list.index(stock_ICR)
-          CDS = float(SmallCapCDS_df['Spread is'][spread_idx].replace("%",""))/100
-        else:
-          ICR_list = list(LargeCapCDS_df[">"])
-          ICR_list.append(stock_ICR)
-          ICR_list.sort(reverse=True)
-          spread_idx = ICR_list.index(stock_ICR)
-          CDS = float(LargeCapCDS_df['Spread is'][spread_idx].replace("%",""))/100     
+        CDS = self.CDS(cap, stock_ICR)     
         fcff_df.loc[(stock,year),'Company Default Spread'] = CDS
 
         #cost of debt
@@ -667,7 +680,7 @@ class SGXstocks(Stocks):
         Depreciation_prev = float(CF.loc['Depreciation/Depletion', str(round(float(year)) - 1)])
         non_cashItems_prev = float(CF.loc['Non-Cash Items', str(round(float(year)) - 1)])
 
-        NetCapEx_prev = - CapEx_prev - Depreciation_prev - non_cashItems_prev
+        NetCapEx_prev = CapEx_prev + Depreciation_prev + non_cashItems_prev
         workingCapital_prev = float(CF.loc['Changes in Working Capital', str(round(float(year)) - 1)])
         EBIT_prev = float(IS.loc['Operating Income', str(round(float(year)) - 1)])
         Tc_prev = float(IS.loc['Provision for Income Taxes', str(round(float(year)) - 1)])/float(IS.loc['Net Income Before Taxes', str(round(float(year)) - 1)])
@@ -732,5 +745,5 @@ if __name__ ==  "__main__":
     sgx_dividend_stocks_csv = f'C:/Users/acer/Documents/Python_Scripts/Stonks/{csv_name}.csv'
 
     c = SGXstocks(sgx_dividend_stocks_csv, timeframe=250)
-    fcff_df = c.FCFF_analysis('AWX.SI')
+    fcff_df = c.FCFF_analysis('A17U.SI')
     print(fcff_df)
