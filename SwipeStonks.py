@@ -346,6 +346,13 @@ class swipestonks:
     # functions for edit fair value window
     def editFairValue(self, stock):
         def calculate_fairValue():
+            
+            FCFF = float(FCFF_slider.get())
+            expected_growth_rate = float(expected_growth_rate_slider.get())
+            WACC = float(WACC_slider.get())
+            terminal_value = float(terminal_value_slider.get())
+            shares_out = float(shares_out_slider.get())
+
 
             projected_FCFF = terminal_value
             for i in range(1,5):
