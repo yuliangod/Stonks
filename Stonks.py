@@ -52,7 +52,6 @@ class Stonks:
         df3[stock1] = stock1_price
         df3[stock2] = stock2_price
         df3 = df3.dropna()
-        print(df3)
 
         stock1_mean = stock1_price.mean()
         stock2_mean = stock2_price.mean()
@@ -65,7 +64,6 @@ class Stonks:
         #final calculation
         correlation = (df3['axb'].sum())/(math.sqrt(df3['a_square'].sum()*(df3['b_square'].sum())))
 
-        print(correlation)
         return(correlation)
         #plt.plot(stock1_price,color='g')
         #plt.plot(stock2_price,color='b')
@@ -74,23 +72,25 @@ class Stonks:
     def riskreturn(self, stock1):
         timeframe = self.timeframe
         stock = self.pricehistory(stock1)
-        print(stock)
         series = pd.Series([], dtype='float64')
+        #calculations
         if len(stock) == timeframe:
+          # loop through prices 
           for i in range(int(timeframe - 1)):
             n = int(i + 1)
-            Cn1 = stock[n]
+            Cn1 = stock[n]  
             Cn = stock[i]
+            returns_ratio = pd.Series([(Cn1-Cn)/Cn])
+            returns_list = returns_list.append(returns_ratio)
             ln_returns = pd.Series([math.log(Cn1/Cn)])
             series = series.append(ln_returns)
-          volatiliity1 = series.std()
-          #calculate average returns
-
-          starting_price1 = stock[0]
-          average_returns1 = ((stock.mean()-starting_price1)/starting_price1)*100
-          return stock1,average_returns1,volatiliity1
+          average_returns1 = returns_list.mean()
+          volatiliity1 = series.std(),5
         else: 
-          print(f'{stock1} has not enough price data for risk return data') 
+          print(f'{stock1} has not enough price data for risk return data')
+          average_returns1, volatiliity1 = 0,0
+        return stock1,average_returns1,volatiliity1 
+        
 
     def riskreturn_graph(self, filename):
         df = pd.read_csv(self.csv, thousands=',')
@@ -98,16 +98,19 @@ class Stonks:
         graph_df = pd.DataFrame(columns=['Name','Returns', 'Volatility'])
 
         #create loop to run risk return function for all stock symbols
+        print("Calculating risk return for all stocks")
         for column in df.columns[1:]:           #start index from 1 because 0 is date column
-            print(column)
             stock1,average_returns1,volatility1 = self.riskreturn(column)
             new_row = {'Name':stock1,'Returns':average_returns1,'Volatility':volatility1}
             graph_df = graph_df.append(new_row,ignore_index = True)
-            print(graph_df)
 
         #creating matplotlib graphs
+        print("Plotting points")
         fig, ax = plt.subplots()
         ax.grid(True, alpha=0.3)
+
+        ax.set_xlabel('Risk')
+        ax.set_ylabel('Returns')
 
         #give stock name when hovering above it
         # Define some CSS to control our custom labels
@@ -146,7 +149,7 @@ class Stonks:
 
         #save file as html to be able to interact with it in the future
         html_str = mpld3.fig_to_html(fig)
-        Html_file= open("%s%s%s%s.html"%(self.timeframe, filename, 'fsm-riskreturn-',date.today()),"w")
+        Html_file = open("%s.html"%(filename),"w")
         Html_file.write(html_str)
         Html_file.close()
 
@@ -166,30 +169,33 @@ class Funds(Stonks):
       regex = re.compile(r'(.*)%')
       mo = regex.search(annual_dividend)
       annual_dividend = mo.group(1)
-      dividend = timeframe/253 * float(annual_dividend)
-      print(dividend)
+      dividend = float(annual_dividend)/253
       return(dividend)
 
-  def riskreturn(self, stock1, include_dividends = True):
+  def riskreturn(self, stock1, include_dividends=True):
         timeframe = self.timeframe
         stock = self.pricehistory(stock1)
-        print(stock)
-        print(stock)
         series = pd.Series([], dtype='float64')
+        returns_list = pd.Series([], dtype='float64')
+
+        #calculations
         if len(stock) == timeframe:
+          # loop through prices 
           for i in range(int(timeframe - 1)):
             n = int(i + 1)
-            Cn1 = stock[n]
+            Cn1 = stock[n]  
             Cn = stock[i]
+            returns_ratio = pd.Series([(Cn1-Cn)/Cn])
+            returns_list = returns_list.append(returns_ratio)
             ln_returns = pd.Series([math.log(Cn1/Cn)])
             series = series.append(ln_returns)
+          print(returns_list)
+          average_returns1 = returns_list.mean()
           volatiliity1 = series.std()
-          #calculate average returns
 
-          starting_price1 = stock[0]
-          average_returns1 = ((stock.mean()-starting_price1)/starting_price1)*100
+          
           if include_dividends == True:
-            dividend = self.fund_dividends(stock1)
+            dividend = self.fund_dividends(stock1)/100
             average_returns1 = average_returns1 + dividend
           return stock1,average_returns1,volatiliity1
         else:
