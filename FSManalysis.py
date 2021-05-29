@@ -1,7 +1,7 @@
 from Stonks import Funds
 
 #set up arguments for Funds class
-csv2 = 'C:/Users/acer/Documents/Python_Scripts/Stonks/fsm-pricehistory-2021-03-10.csv'
+csv2 = 'fsm-pricehistory-2021-05-23.csv'
 dividend_csv = 'C:/Users/acer/Documents/Python_Scripts/Stonks/fsmdividends.csv'
 a = Funds(csv2, dividend_csv)
 

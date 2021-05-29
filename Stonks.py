@@ -172,7 +172,7 @@ class Funds(Stonks):
       dividend = float(annual_dividend)/253
       return(dividend)
 
-  def riskreturn(self, stock1, include_dividends=True):
+  def riskreturn(self, stock1, include_dividends=False):
         timeframe = self.timeframe
         stock = self.pricehistory(stock1)
         series = pd.Series([], dtype='float64')
@@ -189,14 +189,13 @@ class Funds(Stonks):
             returns_list = returns_list.append(returns_ratio)
             ln_returns = pd.Series([math.log(Cn1/Cn)])
             series = series.append(ln_returns)
-          print(returns_list)
           average_returns1 = returns_list.mean()
           volatiliity1 = series.std()
 
-          
           if include_dividends == True:
             dividend = self.fund_dividends(stock1)/100
             average_returns1 = average_returns1 + dividend
+
           return stock1,average_returns1,volatiliity1
         else:
           average_returns1, volatiliity1 = 0,0
